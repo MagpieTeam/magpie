@@ -1,9 +1,11 @@
 defmodule Magpie.DataAccess.Logger do
+  import Magpie.DataAccess.Util
   
   def get do
     {:ok, client} = :cqerl.new_client()
-    {:ok, result} = :cqerl.run_query(client, "SELECT * FROM magpie.loggers;")
+    {:ok, result} = :cqerl.run_query(client, "SELECT id, name, password FROM magpie.loggers;")
 
+    # TODO: unpack like measurements if more than 100
     loggers = :cqerl.all_rows(result)
 
     Enum.map(loggers, &to_logger/1)
@@ -11,14 +13,19 @@ defmodule Magpie.DataAccess.Logger do
 
   def get(id) do
     {:ok, client} = :cqerl.new_client()
-    {:ok, result} = :cqerl.run_query(client, "SELECT * FROM magpie.loggers WHERE id = #{id};")
 
-    [logger | _] = :cqerl.all_rows(result)
-
-    to_logger(logger)
+    query = cql_query(
+      statement: "SELECT id, name, password FROM magpie.loggers WHERE id = ?;",
+      values: [id: :uuid.string_to_uuid(id)])
+    {:ok, result} = :cqerl.run_query(client, query)
+    case :cqerl.next(result) do
+      {row, next_result} ->
+        :cqerl.close_client(client)
+        {:ok, to_logger(row)}
+      :empty_dataset -> {:error, "Not found"}
   end
 
   defp to_logger(l) do
-    [id: :uuid.uuid_to_string(l[:id]), name: l[:name]]
+    [id: :uuid.uuid_to_string(l[:id]), name: l[:name], password: l[:password]]
   end
 end
