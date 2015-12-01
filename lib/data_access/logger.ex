@@ -23,6 +23,7 @@ defmodule Magpie.DataAccess.Logger do
         :cqerl.close_client(client)
         {:ok, to_logger(row)}
       :empty_dataset -> {:error, "Not found"}
+    end
   end
 
   defp to_logger(l) do
