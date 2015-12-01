@@ -1,18 +1,59 @@
 defmodule Magpie.DataAccess.Measurement do
   use Timex
-  
-  def get(id, from, to) do
-    {:ok, client} = :cqerl.new_client()
-    {:ok, result} = :cqerl.run_query(client, "SELECT * FROM magpie.measurements WHERE sensor_id=#{id} AND date='#{from}' ORDER BY timestamp DESC;")
+  import Magpie.DataAccess.Util
 
-    #unpack([], {:ok, result})
+  def put(measurements) do
+    {:ok, client} = :cqerl.new_client()
+    query = cql_query(statement: "INSERT INTO magpie.measurements (sensor_id, date, timestamp, metadata, value) VALUES (?, ?, ?, ?, ?);")
+    queries = for %{"sensor_id" => sensor_id, "timestamp" => timestamp, "metadata" => metadata, "value" => value} <- measurements do
+      timestamp = String.to_integer(timestamp)
+      date =
+        timestamp
+        |> Kernel.*(1000)
+        |> Timex.Date.from(:us)
+        |> Timex.Date.set([hour: 0, minute: 0, second: 0, ms: 0, validate: false])
+        |> Timex.DateFormat.format!("{s-epoch}")
+        |> String.to_integer()
+        |> Kernel.*(1000)
+      {value, _} = Float.parse(value)
+      cql_query(query, values: [sensor_id: :uuid.string_to_uuid(sensor_id), date: date, timestamp: timestamp, metadata: metadata, value: value])
+    end
+    batch_query = cql_query_batch(mode: 1, consistency: 1, queries: queries)
+    {:ok, result} = :cqerl.run_query(client, batch_query)
+    {:ok, measurements}
+  end
+  
+  def get(sensor_id, from, to) do
+    dates = get_dates(from, to, [])
+    
+    Enum.reduce(dates, [], fn (date, acc) -> 
+      {:ok, day} = DateFormat.format(date, "{YYYY}-{0M}-{0D}")
+      get(sensor_id, day) ++ acc
+    end)
+  end
+
+  def get(sensor_id, date) do
+    date = 
+      DateFormat.format!(date, "{s-epoch}")
+      |> String.to_integer()
+      |> Kernel.*(1000)
+
+    {:ok, client} = :cqerl.new_client()  
+    query = cql_query(
+      statement: "SELECT sensor_id, date, timestamp, value, metadata FROM magpie.measurements WHERE sensor_id = ? AND date = ? ORDER BY timestamp DESC;",
+      values: [sensor_id: :uuid.string_to_uuid(sensor_id), date: date]
+    )
+    {:ok, result} = :cqerl.run_query(client, query)
+
     unpack([], result)
   end
 
   def get_dates(from, to, dates) do
     case Date.compare(from, to) do
-      -1 -> get_dates(Date.add(Time.to_timestap(1, :days)), to, from ++ dates)
-      0 -> from ++ dates
+      -1 ->
+        next_day = Date.add(from, Time.to_timestamp(1, :days)) 
+        get_dates(next_day, to, [from | dates])
+      0 -> [from | dates]
       1 -> []
     end
   end
@@ -29,19 +70,6 @@ defmodule Magpie.DataAccess.Measurement do
         end
     end
   end
-
-  # defp unpack(acc, :no_more_result) do
-  #   acc
-  # end
-
-  # defp unpack(acc, {:ok, result}) do
-  #   case :cqerl.all_rows(result) do
-  #     [] -> unpack(acc, :cqerl.fetch_more(result))
-  #     rows ->
-  #       measurements = Enum.map(rows, &to_measurement/1)
-  #       unpack(measurements ++ acc, :cqerl.fetch_more(result))
-  #   end
-  # end
 
   defp to_measurement(row) do
     [timestamp: row[:timestamp], value: row[:value]]
