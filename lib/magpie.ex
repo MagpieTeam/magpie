@@ -1,0 +1,2 @@
+defmodule Magpie do
+end
