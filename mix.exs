@@ -14,7 +14,7 @@ defmodule Magpie.Mixfile do
   #
   # Type "mix help compile.app" for more information
   def application do
-    [applications: [:logger, :cqerl]]
+    [applications: [:logger, :cqerl, :comeonin]]
   end
 
   # Dependencies can be Hex packages:
@@ -30,6 +30,7 @@ defmodule Magpie.Mixfile do
     [
       {:timex, "~> 1.0.0-rc2"},
       {:cqerl, github: "matehat/cqerl", tag: "v0.8.0"},
+      {:comeonin, "~> 1.6"},
     ]
   end
 end
