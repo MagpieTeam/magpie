@@ -1,5 +1,6 @@
 defmodule Magpie.DataAccess.Logger do
   import Magpie.DataAccess.Util
+  require Logger
   
   def get do
     {:ok, client} = :cqerl.new_client()
@@ -32,6 +33,22 @@ defmodule Magpie.DataAccess.Logger do
     query = cql_query(
       statement: "INSERT INTO magpie.loggers (password, name, id) VALUES (?,?,UUID());",
       values: [name: name, password: password])
+    case :cqerl.run_query(client, query) do
+      {:ok, result} ->
+        :ok
+      {:error, {code, msg, _}} ->
+        Logger.error "#{code}: #{msg}"
+        :error
+    end
+
+  end
+
+  def delete(logger_id) do
+    {:ok, client} = :cqerl.new_client()
+
+    query = cql_query(
+      statement: "DELETE FROM magpie.loggers WHERE id=?;",
+      values: [id: logger_id])
     {:ok, result} = :cqerl.run_query(client, query)
   end
 
