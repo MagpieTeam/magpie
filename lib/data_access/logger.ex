@@ -49,7 +49,13 @@ defmodule Magpie.DataAccess.Logger do
     query = cql_query(
       statement: "DELETE FROM magpie.loggers WHERE id=?;",
       values: [id: :uuid.string_to_uuid(logger_id)])
-    {:ok, result} = :cqerl.run_query(client, query)
+    case :cqerl.run_query(client, query) do
+      {:ok, result} ->
+        :ok
+      {:error, {code, msg, _}} ->
+        Logger.error "#{code}: #{msg}"
+        :error
+
   end
 
   defp to_logger(l) do
