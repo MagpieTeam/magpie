@@ -26,6 +26,15 @@ defmodule Magpie.DataAccess.Logger do
     end
   end
 
+  def put(name, password) do
+    {:ok, client} = :cqerl.new_client()
+
+    query = cql_query(
+      statement: "INSERT INTO magpie.loggers (password, name, id) VALUES (?,?,UUID());",
+      values: [name: name, password: password])
+    {:ok, result} = :cqerl.run_query(client, query)
+  end
+
   defp to_logger(l) do
     [id: :uuid.uuid_to_string(l[:id]), name: l[:name], password: l[:password]]
   end
