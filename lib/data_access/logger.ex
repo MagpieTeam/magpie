@@ -55,7 +55,7 @@ defmodule Magpie.DataAccess.Logger do
       {:error, {code, msg, _}} ->
         Logger.error "#{code}: #{msg}"
         :error
-
+    end
   end
 
   defp to_logger(l) do
