@@ -11,6 +11,6 @@ defmodule Magpie.DataAccess.User do
 end
 
   defp to_user(u) do
-    [id: :uuid.uuid_to_string(u[:id]), username: u[:username], password: u[:password], mail: u[:mail], admin: u[:admin]]
+    [username: u[:username], password: u[:password], mail: u[:mail], admin: u[:admin]]
   end
 end
