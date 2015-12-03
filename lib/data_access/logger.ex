@@ -27,12 +27,12 @@ defmodule Magpie.DataAccess.Logger do
     end
   end
 
-  def put(name, password) do
+  def put(name, password, id) do
     {:ok, client} = :cqerl.new_client()
 
     query = cql_query(
-      statement: "INSERT INTO magpie.loggers (password, name, id) VALUES (?,?,UUID());",
-      values: [name: name, password: password])
+      statement: "INSERT INTO magpie.loggers (password, name, id) VALUES (?,?,?);",
+      values: [name: name, password: password, id: :uuid.string_to_uuid(id)])
     case :cqerl.run_query(client, query) do
       {:ok, result} ->
         :ok
@@ -40,7 +40,11 @@ defmodule Magpie.DataAccess.Logger do
         Logger.error "#{code}: #{msg}"
         :error
     end
+  end
 
+  def put(name, password) do
+    id = :uuid.get_v4()
+    put(name, password, :uuid.uuid_to_string(id))
   end
 
   def delete(logger_id) do
