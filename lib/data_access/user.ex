@@ -1,6 +1,5 @@
 defmodule Magpie.DataAccess.User do
   import Magpie.DataAccess.Util
-  require User
 
   def get do
     {:ok, client} = :cqerl.new_client()
@@ -11,6 +10,7 @@ defmodule Magpie.DataAccess.User do
     Enum.map(users, &to_user/1)
 end
 
-defp to_user(u) do
-  [id: :uuid.uuid:to:string(u[:id]), username: u[:username], password: u[:password], mail: u[:mail], admin: u[:admin]]
+  defp to_user(u) do
+    [id: :uuid.uuid_to_string(u[:id]), username: u[:username], password: u[:password], mail: u[:mail], admin: u[:admin]]
+  end
 end
