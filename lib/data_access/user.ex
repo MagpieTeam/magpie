@@ -11,9 +11,9 @@ defmodule Magpie.DataAccess.User do
   end
 
   def get(email) do
-    {:ok, client} = new_client()
+    {:ok, client} = :cqerl.new_client()
 
-    query = cql:query(
+    query = cql_query(
       statement: "SELECT email, username, admin, password FROM magpie.users WHERE id = ?;",
       values: [email: email])
     {:ok, result} = :cqerl.run_query(client, query)
