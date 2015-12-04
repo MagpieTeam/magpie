@@ -10,12 +10,12 @@ defmodule Magpie.DataAccess.User do
     Enum.map(users, &to_user/1)
   end
 
-  def get(email) do
+  def get(id) do
     {:ok, client} = :cqerl.new_client()
 
     query = cql_query(
-      statement: "SELECT email, username, admin, password FROM magpie.users WHERE email = ?;",
-      values: [email: email])
+      statement: "SELECT email, username, admin, password, id FROM magpie.users WHERE id = ?;",
+      values: [id: id])
     {:ok, result} = :cqerl.run_query(client, query)
     case :cqerl.next(result) do
       {row, next_result} ->
@@ -25,12 +25,12 @@ defmodule Magpie.DataAccess.User do
     end
   end
 
-  def put(email, username, password, admin) do
+  def put(email, username, password, admin, id) do
     {:ok, client} = :cqerl.new_client()
 
     query = cql_query(
-      statement: "INSERT INTO magpie.users (email, username, password, admin) VALUES (?,?,?,?);",
-      values: [email: email, username: username, password: password, admin: admin])
+      statement: "INSERT INTO magpie.users (email, username, password, admin, id) VALUES (?,?,?,?,?);",
+      values: [email: email, username: username, password: password, admin: admin, id: :uuid.string_to_uuid(id)])
     case :cqerl.run_query(client, query) do
       {:ok, result} ->
         :ok
@@ -40,12 +40,17 @@ defmodule Magpie.DataAccess.User do
     end
   end
 
-  def delete(email) do
+  def put(email, username, password, admin) do
+    id = :uuid.get_v4()
+    put(email, username, password, admin, id)
+  end
+
+  def delete(id) do
     {:ok, client} = :cqerl.new_client()
 
     query = cql_query(
-      statement: "DELETE FROM magpie.users WHERE email=?;",
-      values: [email: email])
+      statement: "DELETE FROM magpie.users WHERE id=?;",
+      values: [id: id])
     case :cqerl.run_query(client, query) do
       {:ok, result} ->
         :ok
@@ -56,6 +61,6 @@ defmodule Magpie.DataAccess.User do
   end
 
   defp to_user(u) do
-    [username: u[:username], password: u[:password], email: u[:email], admin: u[:admin]]
+    [username: u[:username], password: u[:password], email: u[:email], admin: u[:admin], id: u[:id]]
   end
 end
