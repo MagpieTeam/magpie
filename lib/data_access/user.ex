@@ -3,7 +3,7 @@ defmodule Magpie.DataAccess.User do
 
   def get do
     {:ok, client} = :cqerl.new_client()
-    {:ok, result} = :cqerl.run_query(client, "SELECT * FROM magpie.users")
+    {:ok, result} = :cqerl.run_query(client, "SELECT * FROM magpie.users;")
 
     users = :cqerl.all_rows(result)
 
