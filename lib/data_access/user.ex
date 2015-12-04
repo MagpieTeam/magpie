@@ -40,6 +40,21 @@ defmodule Magpie.DataAccess.User do
     end
   end
 
+  def delete(email) do
+    {:ok, client} = :cqerl.new_client()
+
+    query = cql_query(
+      statement: "DELETE FROM magpie.users WHERE email=?;",
+      values: [email: email])
+    case :cqerl.run_query(client, query) do
+      {:ok, result} ->
+        :ok
+      {:error, {code, msg, _}} ->
+        User.error "#{code}: #{msg}"
+        :error
+    end
+  end
+
   defp to_user(u) do
     [username: u[:username], password: u[:password], email: u[:email], admin: u[:admin]]
   end
