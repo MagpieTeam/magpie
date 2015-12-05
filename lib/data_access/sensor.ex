@@ -4,7 +4,7 @@ defmodule Magpie.DataAccess.Sensor do
   def get(logger_id) do
     {:ok, client} = :cqerl.new_client()
     query = cql_query(
-      statement: "SELECT id, name, unit_of_measure FROM magpie.sensors WHERE logger_id = ?;",
+      statement: "SELECT logger_id, id, name, unit_of_measure FROM magpie.sensors WHERE logger_id = ?;",
       values: [logger_id: :uuid.string_to_uuid(logger_id)])
     {:ok, result} = :cqerl.run_query(client, query)
 
@@ -16,7 +16,7 @@ defmodule Magpie.DataAccess.Sensor do
   def get(id, logger_id) do
     {:ok, client} = :cqerl.new_client()
     query = cql_query(
-      statement: "SELECT id, name, unit_of_measure FROM magpie.sensors WHERE id = ? AND logger_id = ?;",
+      statement: "SELECT logger_id, id, name, unit_of_measure FROM magpie.sensors WHERE id = ? AND logger_id = ?;",
       values: [id: :uuid.string_to_uuid(id), logger_id: :uuid.string_to_uuid(logger_id)])
     {:ok, result} = :cqerl.run_query(client, query)
     case :cqerl.next(result) do
@@ -28,7 +28,7 @@ defmodule Magpie.DataAccess.Sensor do
   end
 
   defp to_sensor(s) do
-    [id: :uuid.uuid_to_string(s[:id]), name: s[:name], unit_of_measure: s[:unit_of_measure]]
+    [logger_id: :uuid.uuid_to_string(s[:logger_id]), id: :uuid.uuid_to_string(s[:id]), name: s[:name], unit_of_measure: s[:unit_of_measure]]
   end
 
 end
