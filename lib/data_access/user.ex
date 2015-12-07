@@ -15,7 +15,7 @@ defmodule Magpie.DataAccess.User do
 
     query = cql_query(
       statement: "SELECT email, username, admin, password, id FROM magpie.users WHERE id = ?;",
-      values: [id: id])
+      values: [id: :uuid.string_to_uuid(id)])
     {:ok, result} = :cqerl.run_query(client, query)
     case :cqerl.next(result) do
       {row, next_result} ->
@@ -50,7 +50,7 @@ defmodule Magpie.DataAccess.User do
 
     query = cql_query(
       statement: "DELETE FROM magpie.users WHERE id=?;",
-      values: [id: id])
+      values: [id: :uuid.string_to_uuid(id)])
     case :cqerl.run_query(client, query) do
       {:ok, result} ->
         :ok
@@ -61,6 +61,6 @@ defmodule Magpie.DataAccess.User do
   end
 
   defp to_user(u) do
-    [username: u[:username], password: u[:password], email: u[:email], admin: u[:admin], id: u[:id]]
+    [username: u[:username], password: u[:password], email: u[:email], admin: u[:admin], id: :uuid.uuid_to_string(u[:id])]
   end
 end
