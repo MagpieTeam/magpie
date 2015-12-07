@@ -30,7 +30,7 @@ defmodule Magpie.DataAccess.User do
 
     query = cql_query(
       statement: "INSERT INTO magpie.users (email, username, password, admin, id) VALUES (?,?,?,?,?);",
-      values: [email: email, username: username, password: password, admin: admin, id: :uuid.string_to_uuid(id)])
+      values: [email: email, username: username, password: password, admin: admin , id: :uuid.string_to_uuid(id)])
     case :cqerl.run_query(client, query) do
       {:ok, result} ->
         :ok
@@ -42,7 +42,7 @@ defmodule Magpie.DataAccess.User do
 
   def put(email, username, password, admin) do
     id = :uuid.get_v4()
-    put(email, username, password, admin, id)
+    put(email, username, password, admin, :uuid.uuid_to_string(id))
   end
 
   def delete(id) do
