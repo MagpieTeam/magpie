@@ -25,6 +25,21 @@ defmodule Magpie.DataAccess.User do
     end
   end
 
+  def get_by_email(email) do
+    {:ok, client} = :cqerl.new_client()
+
+    query = cql_query(
+      statement: "SELECT email, username, admin, password, id FROM magpie.users WHERE email = ?;",
+      values: [email: email])
+    {:ok, result} = :cqerl.run_query(client, query)
+    case :cqerl.next(result) do
+      {row, next_result} ->
+        :cqerl.close_client(client)
+        {:ok, to_user(row)}
+      :empty_dataset -> {:error, "Not found"}
+    end
+  end
+
   def put(email, username, password, admin, id) do
     {:ok, client} = :cqerl.new_client()
 
