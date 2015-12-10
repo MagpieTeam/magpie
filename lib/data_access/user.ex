@@ -1,6 +1,8 @@
 defmodule Magpie.DataAccess.User do
+  require Logger
   import Magpie.DataAccess.Util
-
+  alias Magpie.Contract.User
+  
   def get do
     {:ok, client} = :cqerl.new_client()
     {:ok, result} = :cqerl.run_query(client, "SELECT * FROM magpie.users;")
@@ -40,24 +42,24 @@ defmodule Magpie.DataAccess.User do
     end
   end
 
-  def put(email, username, password, admin, id) do
+  def put(%User{id: nil} = u) do
+    id = :uuid.get_v4()
+    put(%User{u | id: :uuid.uuid_to_string(id)})
+  end
+
+  def put(%User{} = u) do
     {:ok, client} = :cqerl.new_client()
 
     query = cql_query(
       statement: "INSERT INTO magpie.users (email, username, password, admin, id) VALUES (?,?,?,?,?);",
-      values: [email: email, username: username, password: password, admin: admin , id: :uuid.string_to_uuid(id)])
+      values: [email: u.email, username: u.username, password: u.password, admin: u.admin , id: :uuid.string_to_uuid(u.id)])
     case :cqerl.run_query(client, query) do
       {:ok, result} ->
         :ok
       {:error, {code, msg, _}} ->
-        User.error "#{code}: #{msg}"
+        Logger.error "#{code}: #{msg}"
         :error
     end
-  end
-
-  def put(email, username, password, admin) do
-    id = :uuid.get_v4()
-    put(email, username, password, admin, :uuid.uuid_to_string(id))
   end
 
   def delete(id) do
@@ -70,12 +72,18 @@ defmodule Magpie.DataAccess.User do
       {:ok, result} ->
         :ok
       {:error, {code, msg, _}} ->
-        User.error "#{code}: #{msg}"
+        Logger.error "#{code}: #{msg}"
         :error
     end
   end
 
   defp to_user(u) do
-    [username: u[:username], password: u[:password], email: u[:email], admin: u[:admin], id: :uuid.uuid_to_string(u[:id])]
+    %User{
+      id: :uuid.uuid_to_string(u[:id]),
+      username: to_string(u[:username]),
+      email: to_string(u[:email]),
+      password: to_string(u[:password]),
+      admin: u[:admin],
+    }
   end
 end
