@@ -27,7 +27,7 @@ defmodule Magpie.DataAccess.Measurement do
     dates = get_dates(from, to, [])
     
     Enum.reduce(dates, [], fn (date, acc) -> 
-      {:ok, day} = DateFormat.format(date, "{YYYY}/{0M}/{0D} {h24}:{m}:{s}")
+      {:ok, day} = DateFormat.format(date, "{YYYY}/{0M}/{0D}{h24}:{m}:{s}")
       IO.inspect(day)
       get(sensor_id, day) ++ acc
     end)
