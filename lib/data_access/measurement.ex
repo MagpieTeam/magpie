@@ -22,6 +22,28 @@ defmodule Magpie.DataAccess.Measurement do
     {:ok, result} = :cqerl.run_query(client, batch_query)
     {:ok, measurements}
   end
+
+  def put_minute(sensor_id, timestamp, avg, min, max, count) do
+    {:ok, client} = :cqerl.new_client()
+    month =
+      timestamp 
+      |> Timex.Date.set([day: 1, hour: 0, minute: 0, validate: false])
+      |> Timex.DateFormat.format!("{s-epoch}")
+      |> String.to_integer()
+      |> Kernel.*(1000)
+
+    timestamp =
+      timestamp
+      |> Timex.DateFormat.format!("{s-epoch}")
+      |> String.to_integer()
+      |> Kernel.*(1000)
+
+    query = cql_query(
+      statement: "INSERT INTO magpie.measurements_by_minute (sensor_id, month, timestamp, avg, min, max, count) VALUES (?, ?, ?, ?, ?, ?, ?);",
+      values: [sensor_id: :uuid.string_to_uuid(sensor_id), month: month, timestamp: timestamp, avg: avg, min: min, max: max, count: count]
+    )
+    {:ok, result} = :cqerl.run_query(client, query)
+  end
   
   def get(sensor_id, from, to) do
     dates = get_dates(from, to, [])
