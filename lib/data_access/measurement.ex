@@ -27,7 +27,8 @@ defmodule Magpie.DataAccess.Measurement do
     dates = get_dates(from, to, [])
     
     Enum.reduce(dates, [], fn (date, acc) -> 
-      {:ok, day} = DateFormat.format(date, "{YYYY}-{0M}-{0D}")
+      {:ok, day} = DateFormat.format(date, "{YYYY}/{0M}/{0D} {h24}:{m}:{s}")
+      IO.inspect(day)
       get(sensor_id, day) ++ acc
     end)
   end
@@ -42,6 +43,32 @@ defmodule Magpie.DataAccess.Measurement do
     query = cql_query(
       statement: "SELECT sensor_id, date, timestamp, value, metadata FROM magpie.measurements WHERE sensor_id = ? AND date = ? ORDER BY timestamp DESC;",
       values: [sensor_id: :uuid.string_to_uuid(sensor_id), date: date]
+    )
+    {:ok, result} = :cqerl.run_query(client, query)
+
+    unpack([], result)
+  end
+
+  def get(sensor_id, date, from, to) do
+    date = 
+      DateFormat.format!(date, "{s-epoch}")
+      |> String.to_integer()
+      |> Kernel.*(1000)
+
+    from =
+      DateFormat.format!(date, "{s-epoch}")
+      |> String.to_integer()
+      |> Kernel.*(1000)
+
+    from =
+      DateFormat.format!(date, "{s-epoch}")
+      |> String.to_integer()
+      |> Kernel.*(1000)  
+
+    {:ok, client} = :cqerl.new_client()  
+    query = cql_query(
+      statement: "SELECT sensor_id, date, timestamp, value, metadata FROM magpie.measurements WHERE sensor_id = ? AND date = ? AND timestamp > ? AND timestamp < ? ORDER BY timestamp DESC;",
+      values: [sensor_id: :uuid.string_to_uuid(sensor_id), date: date, timestamp: from, timestamp: to]
     )
     {:ok, result} = :cqerl.run_query(client, query)
 
