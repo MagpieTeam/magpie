@@ -60,7 +60,7 @@ defmodule Magpie.DataAccess.Measurement do
       |> String.to_integer()
       |> Kernel.*(1000)
 
-    from =
+    to =
       DateFormat.format!(date, "{s-epoch}")
       |> String.to_integer()
       |> Kernel.*(1000)  
