@@ -35,7 +35,32 @@ defmodule Magpie.DataAccess.Measurement do
     timestamp =
       timestamp
       |> Timex.DateFormat.format!("{s-epoch}")
-      |> String.to_integer()
+      |> String.to_integer()defmodule Magpie.DataAccess.Measurement do
+  use Timex
+  import Magpie.DataAccess.Util
+
+  def put(measurements) do
+    {:ok, client} = :cqerl.new_client()
+    query = cql_query(statement: "INSERT INTO magpie.measurements (sensor_id, date, timestamp, metadata, value) VALUES (?, ?, ?, ?, ?);")
+    queries = for %{"sensor_id" => sensor_id, "timestamp" => timestamp, "metadata" => metadata, "value" => value} <- measurements do
+      timestamp = String.to_integer(timestamp)
+      date =
+        timestamp
+        |> Kernel.*(1000)
+        |> Timex.Date.from(:us)
+        |> Timex.Date.set([hour: 0, minute: 0, second: 0, ms: 0, validate: false])
+        |> Timex.DateFormat.format!("{s-epoch}")
+        |> String.to_integer()
+        |> Kernel.*(1000)
+      {value, _} = Float.parse(value)
+      cql_query(query, values: [sensor_id: :uuid.string_to_uuid(sensor_id), date: date, timestamp: timestamp, metadata: metadata, value: value])
+    end
+    batch_query = cql_query_batch(mode: 1, consistency: 1, queries: queries)
+    {:ok, result} = :cqerl.run_query(client, batch_query)
+    {:ok, measurements}
+  end
+
+  def put_minute(s
       |> Kernel.*(1000)
 
     query = cql_query(
@@ -78,12 +103,12 @@ defmodule Magpie.DataAccess.Measurement do
       |> Kernel.*(1000)
 
     from =
-      DateFormat.format!(date, "{s-epoch}")
+      DateFormat.format!(from, "{s-epoch}")
       |> String.to_integer()
       |> Kernel.*(1000)
 
     to =
-      DateFormat.format!(date, "{s-epoch}")
+      DateFormat.format!(to, "{s-epoch}")
       |> String.to_integer()
       |> Kernel.*(1000)  
 
