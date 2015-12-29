@@ -24,8 +24,9 @@ defmodule Magpie.DataAccess.Measurement do
   end
   
   def get(sensor_id, from, to) do
-    dates = get_dates(from, to)
-    Enum.reduce(dates, [], fn (date, acc) -> 
+    from_date = Date.set(from, [hour: 0, minute: 0, second: 0, ms: 0, validate: false])
+    dates = get_dates(from_date, to)
+    Enum.reduce(dates, [], fn (date, acc) ->
       get(sensor_id, date, from, to) ++ acc
     end)
   end
@@ -75,7 +76,7 @@ defmodule Magpie.DataAccess.Measurement do
   def get_dates(from, to, dates \\ []) do
     case Date.compare(from, to) do
       -1 ->
-        next_day = Date.add(from, Time.to_timestamp(1, :days)) 
+        next_day = Date.add(from, Time.to_timestamp(1, :days))
         get_dates(next_day, to, [from | dates])
       0 -> [from | dates]
       1 -> dates
