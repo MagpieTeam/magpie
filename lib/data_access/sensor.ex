@@ -37,6 +37,16 @@ defmodule Magpie.DataAccess.Sensor do
     {:ok, result} = :cqerl.run_query(client, batch_query)
   end
 
+  def put(sensors, logger_id) do
+    {:ok, client} = :cqerl.new_client()
+    query = cql_query(statement: "INSERT INTO magpie.sensors (id, logger_id, name, unit_of_measure, active) VALUES (?, ?, ?, ?, true);")
+    queries = for %{"id" => id, "name" => name, "unit_of_measure" => unit_of_measure} <- sensors do
+      cql_query(query, values: [id: :uuid.string_to_uuid(id), logger_id: :uuid.string_to_uuid(logger_id), name: name, unit_of_measure: unit_of_measure])
+    end
+    batch_query = cql_query_batch(mode: 1, consistency: 1, queries: queries)
+    {:ok, result} = :cqerl.run_query(client, batch_query)
+  end
+
   defp to_sensor(s) do
     [
       logger_id: :uuid.uuid_to_string(s[:logger_id]), 
