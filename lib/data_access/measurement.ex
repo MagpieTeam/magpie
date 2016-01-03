@@ -60,11 +60,11 @@ defmodule Magpie.DataAccess.Measurement do
     {:ok, result} = :cqerl.run_query(client, query)
   end
   
-  def get(sensor_id, from, to) do
+  def get(sensor_id, from, to, resolution) do
     from_date = Date.set(from, [hour: 0, minute: 0, second: 0, ms: 0, validate: false])
     dates = get_dates(from_date, to)
     Enum.reduce(dates, [], fn (date, acc) ->
-      get(sensor_id, date, from, to) ++ acc
+      get_by(sensor_id, date, from, to, resolution) ++ acc
     end)
   end
 
@@ -84,7 +84,22 @@ defmodule Magpie.DataAccess.Measurement do
     unpack([], result)
   end
 
-  def get(sensor_id, date, from, to) do
+  def get_by(sensor_id, date, from, to, :seconds) do
+    statement = "SELECT sensor_id, date, timestamp, value, metadata FROM magpie.measurements WHERE sensor_id = ? AND date = ? AND timestamp > :ts1 AND timestamp < :ts2 ORDER BY timestamp DESC;"
+    get(sensor_id, date, from, to, statement)
+  end
+
+  def get_by(sensor_id, date, from, to, :minutes) do
+    statement = "SELECT sensor_id, date, timestamp, value, metadata FROM magpie.measurements_by_minute WHERE sensor_id = ? AND month = ? AND timestamp > :ts1 AND timestamp < :ts2 ORDER BY timestamp DESC;"
+    get(sensor_id, date, from, to, statement)
+  end
+
+  def get_by(sensor_id, date, from, to, :hours) do
+    statement = "SELECT sensor_id, date, timestamp, value, metadata FROM magpie.measurements_by_hour WHERE sensor_id = ? AND timestamp > :ts1 AND timestamp < :ts2 ORDER BY timestamp DESC;"
+    get(sensor_id, date, from, to, statement)
+  end
+
+  def get(sensor_id, date, from, to, statement) do
     date = 
       DateFormat.format!(date, "{s-epoch}")
       |> String.to_integer()
@@ -102,7 +117,7 @@ defmodule Magpie.DataAccess.Measurement do
 
     {:ok, client} = :cqerl.new_client()
     query = cql_query(
-      statement: "SELECT sensor_id, date, timestamp, value, metadata FROM magpie.measurements WHERE sensor_id = ? AND date = ? AND timestamp > :ts1 AND timestamp < :ts2 ORDER BY timestamp DESC;",
+      statement: statement,
       values: [sensor_id: :uuid.string_to_uuid(sensor_id), date: date, ts1: from, ts2: to]
     )
     {:ok, result} = :cqerl.run_query(client, query)
