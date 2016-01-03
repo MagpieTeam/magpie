@@ -127,7 +127,7 @@ defmodule Magpie.DataAccess.Measurement do
       |> Kernel.*(1000)
 
     query = cql_query(
-      statement: "SELECT sensor_id, date, timestamp, value, metadata FROM magpie.measurements_by_minute WHERE sensor_id = ? AND month = ? AND timestamp > :ts1 AND timestamp < :ts2 ORDER BY timestamp DESC;",
+      statement: "SELECT sensor_id, month, timestamp, avg, min, max, count FROM magpie.measurements_by_minute WHERE sensor_id = ? AND month = ? AND timestamp > :ts1 AND timestamp < :ts2 ORDER BY timestamp DESC;",
       values: [sensor_id: :uuid.string_to_uuid(sensor_id), month: month, ts1: from, ts2: to]
     )
     
@@ -146,7 +146,7 @@ defmodule Magpie.DataAccess.Measurement do
       |> Kernel.*(1000)
 
     query = cql_query(
-      statement: "SELECT sensor_id, date, timestamp, value, metadata FROM magpie.measurements_by_hour WHERE sensor_id = ? AND timestamp > :ts1 AND timestamp < :ts2 ORDER BY timestamp DESC;",
+      statement: "SELECT sensor_id, timestamp, avg, min, max, count FROM magpie.measurements_by_hour WHERE sensor_id = ? AND timestamp > :ts1 AND timestamp < :ts2 ORDER BY timestamp DESC;",
       values: [sensor_id: :uuid.string_to_uuid(sensor_id), ts1: from, ts2: to]
     )
       
@@ -173,7 +173,8 @@ defmodule Magpie.DataAccess.Measurement do
   defp unpack(acc, result) do
     case :cqerl.next(result) do
       {row, next_result} ->
-        m = to_measurement(row)
+        # m = to_measurement(row)
+        m = row
         unpack([m | acc], next_result)
       :empty_dataset ->
         case :cqerl.fetch_more(result) do
