@@ -85,21 +85,6 @@ defmodule Magpie.DataAccess.Measurement do
   end
 
   def get_by(sensor_id, date, from, to, :seconds) do
-    statement = "SELECT sensor_id, date, timestamp, value, metadata FROM magpie.measurements WHERE sensor_id = ? AND date = ? AND timestamp > :ts1 AND timestamp < :ts2 ORDER BY timestamp DESC;"
-    get(sensor_id, date, from, to, statement)
-  end
-
-  def get_by(sensor_id, date, from, to, :minutes) do
-    statement = "SELECT sensor_id, date, timestamp, value, metadata FROM magpie.measurements_by_minute WHERE sensor_id = ? AND month = ? AND timestamp > :ts1 AND timestamp < :ts2 ORDER BY timestamp DESC;"
-    get(sensor_id, date, from, to, statement)
-  end
-
-  def get_by(sensor_id, date, from, to, :hours) do
-    statement = "SELECT sensor_id, date, timestamp, value, metadata FROM magpie.measurements_by_hour WHERE sensor_id = ? AND timestamp > :ts1 AND timestamp < :ts2 ORDER BY timestamp DESC;"
-    get(sensor_id, date, from, to, statement)
-  end
-
-  def get(sensor_id, date, from, to, statement) do
     date = 
       DateFormat.format!(date, "{s-epoch}")
       |> String.to_integer()
@@ -115,11 +100,61 @@ defmodule Magpie.DataAccess.Measurement do
       |> String.to_integer()
       |> Kernel.*(1000)
 
-    {:ok, client} = :cqerl.new_client()
     query = cql_query(
-      statement: statement,
+      statement: "SELECT sensor_id, date, timestamp, value, metadata FROM magpie.measurements WHERE sensor_id = ? AND date = ? AND timestamp > :ts1 AND timestamp < :ts2 ORDER BY timestamp DESC;",
       values: [sensor_id: :uuid.string_to_uuid(sensor_id), date: date, ts1: from, ts2: to]
     )
+
+    get(query)
+  end
+
+  def get_by(sensor_id, date, from, to, :minutes) do
+    month =
+      date
+      |> Date.set([day: 1, validate: false])
+      |> DateFormat.format!("{s-epoch}")
+      |> String.to_integer()
+      |> Kernel.*(1000)
+
+    from =
+      DateFormat.format!(from, "{s-epoch}")
+      |> String.to_integer()
+      |> Kernel.*(1000)
+
+    to =
+      DateFormat.format!(to, "{s-epoch}")
+      |> String.to_integer()
+      |> Kernel.*(1000)
+
+    query = cql_query(
+      statement: "SELECT sensor_id, date, timestamp, value, metadata FROM magpie.measurements_by_minute WHERE sensor_id = ? AND month = ? AND timestamp > :ts1 AND timestamp < :ts2 ORDER BY timestamp DESC;",
+      values: [sensor_id: :uuid.string_to_uuid(sensor_id), month: month, ts1: from, ts2: to]
+    )
+    
+    get(query)
+  end
+
+  def get_by(sensor_id, _date, from, to, :hours) do
+    from =
+      DateFormat.format!(from, "{s-epoch}")
+      |> String.to_integer()
+      |> Kernel.*(1000)
+
+    to =
+      DateFormat.format!(to, "{s-epoch}")
+      |> String.to_integer()
+      |> Kernel.*(1000)
+
+    query = cql_query(
+      statement: "SELECT sensor_id, date, timestamp, value, metadata FROM magpie.measurements_by_hour WHERE sensor_id = ? AND timestamp > :ts1 AND timestamp < :ts2 ORDER BY timestamp DESC;",
+      values: [sensor_id: :uuid.string_to_uuid(sensor_id), ts1: from, ts2: to]
+    )
+      
+    get(query)
+  end
+
+  def get(query) do
+    {:ok, client} = :cqerl.new_client()
     {:ok, result} = :cqerl.run_query(client, query)
 
     unpack([], result)
