@@ -1,13 +1,10 @@
 defmodule Magpie.DataAccess.User do
   import Magpie.DataAccess.Util
 
-  def get do
-    {:ok, client} = :cqerl.new_client()
-    {:ok, result} = :cqerl.run_query(client, "SELECT * FROM magpie.users;")
-
-    users = :cqerl.all_rows(result)
-
-    Enum.map(users, &to_user/1)
+  def get() do
+    get_stream("SELECT * FROM magpie.users;")
+    |>Stream.map(&to_user/1)
+    |>Enum.to_list
   end
 
   def get(id) do

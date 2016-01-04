@@ -2,15 +2,13 @@ defmodule Magpie.DataAccess.Sensor do
   import Magpie.DataAccess.Util
 
   def get(logger_id) do
-    {:ok, client} = :cqerl.new_client()
     query = cql_query(
       statement: "SELECT logger_id, id, name, unit_of_measure FROM magpie.sensors WHERE logger_id = ?;",
       values: [logger_id: :uuid.string_to_uuid(logger_id)])
-    {:ok, result} = :cqerl.run_query(client, query)
 
-    sensors = :cqerl.all_rows(result)
-
-    Enum.map(sensors, &to_sensor/1)
+    get_stream(query)
+    |>Stream.map(&to_sensor/1)
+    |>Enum.to_list
   end
 
   def get(id, logger_id) do
