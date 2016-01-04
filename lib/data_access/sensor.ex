@@ -49,7 +49,7 @@ defmodule Magpie.DataAccess.Sensor do
 
   defp to_sensor(s) do
     [
-      logger_id: :uuid.uuid_to_string(s[:logger_id]), 
+      logger_id: to_string(:uuid.uuid_to_string(s[:logger_id])),
       id: :uuid.uuid_to_string(s[:id]), 
       name: s[:name], 
       unit_of_measure: s[:unit_of_measure],
