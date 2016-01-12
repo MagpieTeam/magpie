@@ -19,7 +19,9 @@ defmodule Magpie.DataAccess.Logger do
       {row, next_result} ->
         :cqerl.close_client(client)
         {:ok, to_logger(row)}
-      :empty_dataset -> {:error, "Not found"}
+      :empty_dataset ->
+        :cqerl.close_client(client)
+        {:error, "Not found"}
     end
   end
 
@@ -31,8 +33,10 @@ defmodule Magpie.DataAccess.Logger do
       values: [name: name, password: password, id: :uuid.string_to_uuid(id)])
     case :cqerl.run_query(client, query) do
       {:ok, result} ->
+        :cqerl.close_client(client)
         :ok
       {:error, {code, msg, _}} ->
+        :cqerl.close_client(client)
         Logger.error "#{code}: #{msg}"
         :error
     end
@@ -51,8 +55,10 @@ defmodule Magpie.DataAccess.Logger do
       values: [id: :uuid.string_to_uuid(logger_id)])
     case :cqerl.run_query(client, query) do
       {:ok, result} ->
+        :cqerl.close_client(client)
         :ok
       {:error, {code, msg, _}} ->
+        :cqerl.close_client(client)
         Logger.error "#{code}: #{msg}"
         :error
     end

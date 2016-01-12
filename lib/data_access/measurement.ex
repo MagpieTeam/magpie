@@ -20,6 +20,7 @@ defmodule Magpie.DataAccess.Measurement do
     end
     batch_query = cql_query_batch(mode: 1, consistency: 1, queries: queries)
     {:ok, result} = :cqerl.run_query(client, batch_query)
+    :cqerl.close_client(client)
     {:ok, measurements}
   end
 
@@ -43,6 +44,7 @@ defmodule Magpie.DataAccess.Measurement do
       values: [sensor_id: :uuid.string_to_uuid(sensor_id), month: month, timestamp: timestamp, avg: avg, min: min, max: max, count: count]
     )
     {:ok, result} = :cqerl.run_query(client, query)
+    :cqerl.close_client(client)
   end
 
   def put_hour(sensor_id, timestamp, avg, min, max, count) do
@@ -58,6 +60,7 @@ defmodule Magpie.DataAccess.Measurement do
       values: [sensor_id: :uuid.string_to_uuid(sensor_id), timestamp: timestamp, avg: avg, min: min, max: max, count: count]
     )
     {:ok, result} = :cqerl.run_query(client, query)
+    :cqerl.close_client(client)
   end
   
   def get(sensor_id, from, to, resolution) do
@@ -82,6 +85,7 @@ defmodule Magpie.DataAccess.Measurement do
     {:ok, result} = :cqerl.run_query(client, query)
 
     unpack([], result)
+    :cqerl.close_client(client)
   end
 
   def get_by(sensor_id, date, from, to, :seconds) do
@@ -158,6 +162,7 @@ defmodule Magpie.DataAccess.Measurement do
     {:ok, result} = :cqerl.run_query(client, query)
 
     unpack([], result)
+    :cqerl.close_client(client)
   end
 
   def get_dates(from, to, dates \\ []) do

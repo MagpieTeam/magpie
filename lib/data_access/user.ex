@@ -1,5 +1,6 @@
 defmodule Magpie.DataAccess.User do
   import Magpie.DataAccess.Util
+  require Logger
 
   def get() do
     get_stream("SELECT * FROM magpie.users;")
@@ -18,7 +19,9 @@ defmodule Magpie.DataAccess.User do
       {row, next_result} ->
         :cqerl.close_client(client)
         {:ok, to_user(row)}
-      :empty_dataset -> {:error, "Not found"}
+      :empty_dataset ->
+        :cqerl.close_client(client)
+        {:error, "Not found"}
     end
   end
 
@@ -33,7 +36,9 @@ defmodule Magpie.DataAccess.User do
       {row, next_result} ->
         :cqerl.close_client(client)
         {:ok, to_user(row)}
-      :empty_dataset -> {:error, "Not found"}
+      :empty_dataset ->
+        :cqerl.close_client(client)
+        {:error, "Not found"}
     end
   end
 
@@ -45,9 +50,11 @@ defmodule Magpie.DataAccess.User do
       values: [email: email, username: username, password: password, admin: admin , id: :uuid.string_to_uuid(id)])
     case :cqerl.run_query(client, query) do
       {:ok, result} ->
+        :cqerl.close_client(client)
         :ok
       {:error, {code, msg, _}} ->
-        User.error "#{code}: #{msg}"
+        :cqerl.close_client(client)
+        Logger.error("#{code}: #{msg}")
         :error
     end
   end
@@ -65,9 +72,11 @@ defmodule Magpie.DataAccess.User do
       values: [id: :uuid.string_to_uuid(id)])
     case :cqerl.run_query(client, query) do
       {:ok, result} ->
+        :cqerl.close_client(client)
         :ok
       {:error, {code, msg, _}} ->
-        User.error "#{code}: #{msg}"
+        :cqerl.close_client(client)
+        Logger.error("#{code}: #{msg}")
         :error
     end
   end

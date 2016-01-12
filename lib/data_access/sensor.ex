@@ -21,7 +21,9 @@ defmodule Magpie.DataAccess.Sensor do
       {row, next_result} ->
         :cqerl.close_client(client)
         {:ok, to_sensor(row)}
-      :empty_dataset -> {:error, "Not found"}
+      :empty_dataset ->
+        :cqerl.close_client(client)
+        {:error, "Not found"}
     end
   end
 
@@ -33,6 +35,7 @@ defmodule Magpie.DataAccess.Sensor do
     end
     batch_query = cql_query_batch(mode: 1, consistency: 1, queries: queries)
     {:ok, result} = :cqerl.run_query(client, batch_query)
+    :cqerl.close_client(client)
   end
 
   def put(sensors, logger_id) do
@@ -43,6 +46,7 @@ defmodule Magpie.DataAccess.Sensor do
     end
     batch_query = cql_query_batch(mode: 1, consistency: 1, queries: queries)
     {:ok, result} = :cqerl.run_query(client, batch_query)
+    :cqerl.close_client(client)
   end
 
   defp to_sensor(s) do
